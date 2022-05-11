@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="RemoteMappingsManager">
+    <list>
+      <list>
+        <remote-mappings server-id="python@sftp://student@20.232.140.202:22/anaconda/envs/azureml_py38/bin/python">
+          <settings>
+            <list>
+              <mapping local-root="$PROJECT_DIR$/HW1" remote-root="/home/student/HW1" />
+            </list>
+          </settings>
+        </remote-mappings>
+      </list>
+    </list>
+  </component>
+</project>
