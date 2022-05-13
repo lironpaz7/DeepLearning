@@ -93,7 +93,7 @@ if __name__ == '__main__':
 
     # stage 4: saving csv
     print('Exporting to prediction.csv...')
-    prediction_df.to_csv("prediction.csv", index=False)
+    prediction_df.to_csv("prediction.csv", index=False, header=False)
     print('------------------- Stage 4 completed -------------------')
 
     print('Finished!')
