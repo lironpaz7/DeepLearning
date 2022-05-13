@@ -24,6 +24,7 @@ def eval(model, loader, criterion, test=True):
         loss_lst, roc_auc_lst, f1_lst, acc_lst = [], [], [], []
         loss, roc_auc, f1, acc = 0, 0, 0, 0
         all_labels = []
+        # true_labels = []
         for images, labels in loader:
             if torch.cuda.is_available():
                 images = images.cuda()
@@ -37,6 +38,7 @@ def eval(model, loader, criterion, test=True):
 
             p = list(predicted.cpu().numpy())
             all_labels.extend(p)
+            # true_labels.extend(list(labels.cpu().numpy()))
             # calculate metrics
             loss += loss.data
             roc_auc += metrics.roc_auc_score(labels.cpu(), y_prob)
@@ -54,6 +56,8 @@ def eval(model, loader, criterion, test=True):
             # write to CSV
             filenames = [x.split('_')[0] for x in loader.dataset.images]
             all_labels = [x.item() for x in all_labels]
+            # true_labels = [x.item() for x in true_labels] # add to df in order to calculates ROC-AUC easilty in
+            # a jupyter notebook later
             df = pd.DataFrame({'filenames': filenames,
                                'labels': all_labels})
             return df
