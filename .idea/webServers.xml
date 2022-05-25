@@ -3,7 +3,7 @@
   <component name="WebServers">
     <option name="servers">
       <webServer id="3230953e-6fab-4269-9422-655b50e5a27a" name="DL" url="http://20.25.112.56">
-        <fileTransfer rootFolder="/home/student" accessType="SFTP" host="20.232.140.217" port="22" sshConfigId="31933f1e-ca93-4029-9568-24036d7dc7e0" sshConfig="student@20.232.140.217:22 password">
+        <fileTransfer rootFolder="/home/student" accessType="SFTP" host="52.240.58.33" port="22" sshConfigId="31933f1e-ca93-4029-9568-24036d7dc7e0" sshConfig="student@52.240.58.33:22 password">
           <advancedOptions>
             <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
           </advancedOptions>

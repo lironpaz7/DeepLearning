@@ -1,66 +1,90 @@
 import argparse
 import time
-# from keras.preprocessing.text import Tokenizer
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
-from torch import nn, optim, autograd
 
-from model import RNN
+import pandas as pd
+import torch.cuda
+from sklearn.metrics import confusion_matrix, accuracy_score
+from torch import nn, optim
+from torch.utils.data import TensorDataset, DataLoader
+from predict import eval
+from model import RNN, LSTM
 from utils import *
-# from keras.preprocessing.sequence import pad_sequences
-from sklearn.preprocessing import LabelEncoder
 
 
-def train(df, model, criterion, optimizer, num_epochs=30):
+def train(train_dl, test_dl, model, criterion, optimizer, num_epochs=30):
     if torch.cuda.is_available():
         model = model.cuda()
 
-    # build a list of tweets & labels
-    train_tweets = df.content.tolist()
-    train_labels = df.emotion.tolist()
-    # torch.autograd.set_detect_anomaly(True)
+    # extract predicted labels for accuracy and confusion matrix
+    sentiment_class = list(label_dict.keys())
+    loss_lst, acc_lst = [], []
+    acc_lst_tst, loss_lst_tst = [], []
 
     for epoch in range(1, num_epochs + 1):
-        loss_lst = []
-        print(f'Running epoch: [{epoch}/{num_epochs}]')
-        for i in range(len(train_tweets)):
-            # Step 1. Remember that Pytorch accumulates gradients.
-            # We need to clear them out before each instance
-            # Also, we need to clear out the hidden state of the LSTM,
-            # detaching it from its history on the last instance.
-            hidden = model.init_hidden()
-            optimizer.zero_grad()
-            # Step 2. Get our inputs ready for the network, that is, turn them nto
-            # Tensors of word indices.
-            sentence, label = train_tweets[i], train_labels[i]
-            sentence_in = prepare_sequence(sentence, model.vocab)
-            target_label = map_class(label)
-
+        print(f'Running Epoch: [{epoch}/{num_epochs}]')
+        h0, c0 = model.init_hidden()
+        y_pred, y_actual = [], []
+        if torch.cuda.is_available():
+            h0 = h0.cuda()
+            c0 = c0.cuda()
+        for batch_idx, batch in enumerate(train_dl):
+            input, target = batch[0], batch[1]
             if torch.cuda.is_available():
-                hidden = hidden.cuda()
-                sentence_in = sentence_in.cuda()
-                target_label = target_label.cuda()
+                input = input.cuda()
+                target = target.cuda()
 
-            # Step 3. Run our forward pass.
-            for w in sentence_in:
-                output, hidden = model(w, hidden)
+            optimizer.zero_grad()
+            with torch.set_grad_enabled(True):
+                output, hidden = model(input, (h0, c0))
 
-            # Step 4. Compute the loss, gradients, and update the parameters by
-            #  calling optimizer.step()
-            loss = criterion(output, target_label)
-            loss.backward(retain_graph=True)
-            optimizer.step()
-            loss_lst.append(loss.data)
+                # extract predicted labels
+                _, preds = torch.max(output, 1)
+                preds = preds.cpu().tolist()
+                y_pred.extend(preds)
+                y_actual.extend(target.tolist())
 
-        print(f'epoch: [{epoch}/{num_epochs}] | loss: {sum(loss_lst) / len(loss_lst): .4f}')
+                loss = criterion(output, target)
+                loss.backward()
+                optimizer.step()
+
+        loss_lst.append(loss.item())
+        acc = accuracy_score(y_actual, y_pred)
+        acc_lst.append(acc)
+        print(f'Epoch: [{epoch}/{num_epochs}] | loss: {loss.data: .4f}')
+        print(f'Train Accuracy: {acc}')
+
+        # eval on test
+        test_acc, test_loss = eval(test_dl, model, criterion, train=True)
+        acc_lst_tst.append(test_acc)
+        loss_lst_tst.append(test_loss)
+        print(f'Test Loss: {test_loss}, Test Acc: {test_acc}')
+        print('---------------------------------------------------------')
+
+    print(sentiment_class)
+    y_actual_str = [reverse_label(x) for x in y_actual]
+    y_pred_str = [reverse_label(x) for x in y_pred]
+    print(confusion_matrix(y_actual_str, y_pred_str, labels=sentiment_class))
+    print(accuracy_score(y_actual, y_pred))
+
+    # outputs results for analysis
+    pd.DataFrame({
+        'acc': acc_lst,
+        'loss': loss_lst
+    }).to_csv('metrics_train.csv', index=False)
+
+    pd.DataFrame({
+        'y_pred': y_pred_str,
+        'y_actual': y_actual_str
+    }).to_csv('labels_train.csv', index=False)
+
+    # outputs results for analysis
+    pd.DataFrame({
+        'acc': acc_lst_tst,
+        'loss': loss_lst_tst
+    }).to_csv('metrics_test.csv', index=False)
 
 
 if __name__ == '__main__':
-    # Hyper-Parameters
-    EMBEDDING_DIM = 50
-    HIDDEN_DIM = 10
-    num_epochs = 30
-
     t = time.time()
     # Parsing script arguments
     parser = argparse.ArgumentParser(description='Process input')
@@ -76,34 +100,57 @@ if __name__ == '__main__':
     print('------------------- Stage 2 completed -------------------')
 
     print('Building vocabulary...')
-    vocab, vocab_index = {}, 0
-    for tokens in df.content.values:
-        for key, token in enumerate(tokens):
-            if token not in vocab:
-                vocab[token] = vocab_index
-                vocab_index += 1
+    vocab = build_index(df)
+    print(f'Vocabulary size: {len(vocab)}')
     print('------------------- Stage 3 completed -------------------')
 
-    print('Building model and setting SGD optimizer...')
+    print('Encoding and padding tweets...')
+    train_data = [(encode_and_pad(tweet, SEQ_LENGTH, vocab), label_mapper(label)) for tweet, label in
+                  zip(df.content, df.emotion)]
+    print('------------------- Stage 4 completed -------------------')
+
+    print('Preparing dataset...')
+    train_x = np.array([tweet for tweet, label in train_data])
+    train_y = np.array([label for tweet, label in train_data])
+
+    train_ds = TensorDataset(torch.from_numpy(train_x), torch.from_numpy(train_y))
+    train_dl = DataLoader(train_ds, shuffle=True, batch_size=BATCH_SIZE, drop_last=True)
+
+    # getting Test Data
+    df2 = load_data('testEmotions.csv', test=True)
+    df2 = preprocess(df2, train=False)
+    test_data = [(encode_and_pad(tweet, SEQ_LENGTH, vocab), label_mapper(label)) for tweet, label in
+                 zip(df2.content, df2.emotion)]
+
+    test_x = np.array([tweet for tweet, label in test_data])
+    test_y = np.array([label for tweet, label in test_data])
+
+    test_ds = TensorDataset(torch.from_numpy(test_x), torch.from_numpy(test_y))
+    test_dl = DataLoader(test_ds, shuffle=False, batch_size=BATCH_SIZE, drop_last=True)
+
+    print('------------------- Stage 5 completed -------------------')
+
+    print('Building LSTM model and setting Adam optimizer...')
     # creating an instance of RNN
-    rnn = RNN(EMBEDDING_DIM, HIDDEN_DIM, len(vocab), len(label_dict), vocab)
+    # model = RNN(EMBEDDING_DIM, HIDDEN_DIM, len(vocab), len(label_dict), vocab)
+    model = LSTM(len(vocab), EMBEDDING_DIM, HIDDEN_DIM, DROPOUT, BATCH_SIZE, vocab)
 
     # Setting the loss function and optimizer
-    criterion = nn.NLLLoss()
-    optimizer = optim.Adam(rnn.parameters(), lr=0.001)
-    print('Number Of Parameters: ', sum(param.numel() for param in rnn.parameters()))
-    print('------------------- Stage 4 completed -------------------')
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    print('Number Of Parameters: ', sum(param.numel() for param in model.parameters()))
+    print('------------------- Stage 6 completed -------------------')
 
     # stage 5: training
     print('Training Model...')
-    train(df, rnn, criterion, optimizer, num_epochs)
-    print('------------------- Stage 5 completed -------------------')
+    train(train_dl, test_dl, model, criterion, optimizer, NUM_EPOCHS)
+    print('------------------- Stage 7 completed -------------------')
 
     # stage 6: save model
     model_name = 'model.pkl'
     print(f'Saving {model_name}...')
-    torch.save(rnn, model_name)
-    print('------------------- Stage 6 completed -------------------')
+    torch.save(model, model_name)
+    print('------------------- Stage 8 completed -------------------')
 
     print('Finished!')
     print(f'Total Time Taken: {time.time() - t}')

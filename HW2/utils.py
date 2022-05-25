@@ -7,6 +7,14 @@ import torch
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 
+# Hyper-Parameters
+EMBEDDING_DIM = 64
+HIDDEN_DIM = 32
+DROPOUT = 0.1
+NUM_EPOCHS = 30
+BATCH_SIZE = 7
+SEQ_LENGTH = 32
+
 stop_words = set(stopwords.words('english'))
 label_dict = {'happiness': 2,
               'neutral': 1,
@@ -14,21 +22,23 @@ label_dict = {'happiness': 2,
               }
 
 
-def padding_(sentences, seq_len):
-    features = np.zeros((len(sentences), seq_len), dtype=int)
-    for ii, review in enumerate(sentences):
-        if len(review) != 0:
-            features[ii, -len(review):] = np.array(review)[:seq_len]
-    return features
+def reverse_label(label):
+    if label == 0:
+        return 'sadness'
+    elif label == 1:
+        return 'neutral'
+    else:
+        return 'happiness'
 
 
 def label_mapper(x):
     return label_dict[x]
 
 
-def load_data(path):
+def load_data(path, test=False):
     df = pd.read_csv(path)
-    print(f'Loaded {len(df)} tweets')
+    if not test:
+        print(f'Loaded {len(df)} tweets')
     return df
 
 
@@ -40,28 +50,56 @@ def tokenizer(sentence):
     return tokens
 
 
-def map_word_vocab(sentence, vocab):
-    idxs = [vocab[w] for w in sentence]
-    return torch.tensor(idxs, dtype=torch.long)
-
-
 def map_class(sentiment):
     return torch.tensor([label_dict[sentiment]], dtype=torch.long)
 
 
-def prepare_sequence(sentence, vocab):
-    # create the input feature vector
-    input = map_word_vocab(sentence, vocab)
-    return input
-
-
 def clean_tweets(text):
-    text_cleaning_regex = "@S+|https?:S+|http?:S|[^A-Za-z0-9]+"
-    text = re.sub(text_cleaning_regex, ' ', str(text).lower()).strip()
-    return text
-    # return " ".join(tokens)
+    link_re_pattern = "https?:\/\/t.co/[\w]+"
+    mention_re_pattern = "@\w+"
+    text = re.sub(link_re_pattern, "", text)
+    text = re.sub(mention_re_pattern, "", text)
+    return text.lower()
 
 
-def preprocess(df):
+def encode_and_pad(tweet, length, index):
+    sos = [index["<SOS>"]]
+    eos = [index["<EOS>"]]
+    pad = [index["<PAD>"]]
+
+    if len(tweet) < length - 2:  # -2 for SOS and EOS
+        n_pads = length - 2 - len(tweet)
+        encoded = []
+        for w in tweet:
+            if w not in index:
+                index[w] = 0
+            encoded.append(index[w])
+        # encoded = [index[w] for w in tweet]
+        return sos + encoded + eos + pad * n_pads
+    else:  # tweet is longer than possible; truncating
+        encoded = []
+        for w in tweet:
+            if w not in index:
+                index[w] = 0
+            encoded.append(index[w])
+        # encoded = [index[w] for w in tweet]
+        truncated = encoded[:length - 2]
+        return sos + truncated + eos
+
+
+def build_index(df):
+    index2word = ["<PAD>", "<SOS>", "<EOS>"]
+    for tokens in df.content:
+        for token in tokens:
+            if token not in index2word:
+                index2word.append(token)
+
+    word2index = {token: idx for idx, token in enumerate(index2word)}
+    return word2index
+
+
+def preprocess(df, train=True):
+    if train:
+        df = df.dropna()
     df.content = df.content.apply(lambda x: tokenizer(x))
     return df

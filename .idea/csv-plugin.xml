@@ -10,6 +10,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="\HW2\testEmotions.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="\HW2\trainEmotions.csv">
           <value>
             <Attribute>
