@@ -48,7 +48,7 @@ def eval(dl, model, criterion, train=False):
         y_pred_str = [reverse_label(x) for x in y_pred]
         print(confusion_matrix(y_actual_str, y_pred_str, labels=sentiment_class))
         print(f'Test accuracy: {accuracy_score(y_actual, y_pred)}')
-        return y_pred_str
+        return y_actual_str, y_pred_str
 
 
 if __name__ == '__main__':
@@ -84,11 +84,11 @@ if __name__ == '__main__':
 
     print('Evaluating...')
     criterion = nn.CrossEntropyLoss()
-    y_pred = eval(test_dl, model, criterion, train=False)
+    y_true, y_pred = eval(test_dl, model, criterion, train=False)
     print('------------------- Stage 6 completed -------------------')
 
     print('Exporting to prediction.csv...')
-    d = load_data(args.input_file)
+    d = load_data(args.input_file, stats=False)
 
     prediction_df = pd.DataFrame(
         {'emotion': y_pred,
@@ -97,5 +97,11 @@ if __name__ == '__main__':
     )
     prediction_df.to_csv("prediction.csv", index=False, header=True)
 
+    metrics = True
+    if metrics:
+        pd.DataFrame(
+            {'pred': y_pred,
+             'true': y_true
+             }).to_csv('test_pred.csv')
     print('Finished!')
     print(f'Total Time Taken: {time.time() - t}')

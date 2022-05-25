@@ -73,9 +73,9 @@ def train(train_dl, test_dl, model, criterion, optimizer, num_epochs=30):
     }).to_csv('metrics_train.csv', index=False)
 
     pd.DataFrame({
-        'y_pred': y_pred_str,
-        'y_actual': y_actual_str
-    }).to_csv('labels_train.csv', index=False)
+        'pred': y_pred_str,
+        'true': y_actual_str
+    }).to_csv('train_pred.csv', index=False)
 
     # outputs results for analysis
     pd.DataFrame({
@@ -117,7 +117,7 @@ if __name__ == '__main__':
     train_dl = DataLoader(train_ds, shuffle=True, batch_size=BATCH_SIZE, drop_last=True)
 
     # getting Test Data
-    df2 = load_data('testEmotions.csv', test=True)
+    df2 = load_data('testEmotions.csv', stats=False)
     df2 = preprocess(df2, train=False)
     test_data = [(encode_and_pad(tweet, SEQ_LENGTH, vocab), label_mapper(label)) for tweet, label in
                  zip(df2.content, df2.emotion)]

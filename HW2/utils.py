@@ -35,9 +35,9 @@ def label_mapper(x):
     return label_dict[x]
 
 
-def load_data(path, test=False):
+def load_data(path, stats=True):
     df = pd.read_csv(path)
-    if not test:
+    if stats:
         print(f'Loaded {len(df)} tweets')
     return df
 
