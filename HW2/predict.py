@@ -11,7 +11,16 @@ from utils import *
 
 
 def eval(dl, model, criterion, train=False):
-    # Convert the sentiment_class from set to list
+    """
+    Predicting labels using the given model on the given data set
+    :param dl: Data loader object
+    :param model: Model object
+    :param criterion: Loss criterion
+    :param train: If train is set to True then this method will return the loss and accuracy. Otherwise, prints the
+    confusion
+    :return:
+    """
+    # Converts the sentiment_class from set to list
     sentiment_class = list(label_dict.keys())
     loss_lst, acc_lst = [], []
     y_pred, y_actual = [], []
@@ -66,7 +75,8 @@ if __name__ == '__main__':
     print('------------------- Stage 2 completed -------------------')
 
     print('Loading Model...')
-    model = torch.load('model.pkl')
+    model_name = 'model_epoch_4.pkl'
+    model = torch.load(model_name)  # 4 - 0.503 accuracy
     print('------------------- Stage 3 completed -------------------')
 
     print('Encoding and padding tweets...')

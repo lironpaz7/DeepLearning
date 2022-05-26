@@ -1,7 +1,6 @@
 import argparse
 import time
 
-import pandas as pd
 import torch.cuda
 from sklearn.metrics import confusion_matrix, accuracy_score
 from torch import nn, optim
@@ -12,6 +11,15 @@ from utils import *
 
 
 def train(train_dl, test_dl, model, criterion, optimizer, num_epochs=30):
+    """
+    Trains the given model for some epochs.
+    :param train_dl: Train Data Loader
+    :param test_dl: Test Data Loader
+    :param model: Model object
+    :param criterion: Loss criterion
+    :param optimizer: Optimizer object
+    :param num_epochs: Number of epochs for train the model
+    """
     if torch.cuda.is_available():
         model = model.cuda()
 
@@ -59,6 +67,8 @@ def train(train_dl, test_dl, model, criterion, optimizer, num_epochs=30):
         loss_lst_tst.append(test_loss)
         print(f'Test Loss: {test_loss}, Test Acc: {test_acc}')
         print('---------------------------------------------------------')
+        model_name = f'model_epoch_{epoch}.pkl'
+        torch.save(model, model_name)
 
     print(sentiment_class)
     y_actual_str = [reverse_label(x) for x in y_actual]

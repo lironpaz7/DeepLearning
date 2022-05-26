@@ -27,7 +27,7 @@ class RNN(nn.Module):
         return self.vocab
 
 
-class LSTM(torch.nn.Module):
+class LSTM(nn.Module):
     def __init__(self, vocab_size, embedding_dim, hidden_dim, dropout, batch_size, vocab):
         super().__init__()
         self.batch_size = batch_size
