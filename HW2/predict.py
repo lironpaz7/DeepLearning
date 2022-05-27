@@ -75,7 +75,7 @@ if __name__ == '__main__':
 
     print('Loading Model...')
     model_name = 'model_epoch_9.pkl'
-    model = torch.load(model_name)  # 4 - 0.5 accuracy
+    model = torch.load(model_name)
     print('------------------- Stage 3 completed -------------------')
 
     print('Encoding and padding tweets...')
