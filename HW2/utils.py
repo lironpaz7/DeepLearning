@@ -12,7 +12,7 @@ EMBEDDING_DIM = 64
 HIDDEN_DIM = 32
 DROPOUT = 0.1
 NUM_EPOCHS = 30
-BATCH_SIZE = 7
+BATCH_SIZE = 50
 SEQ_LENGTH = 32
 
 stop_words = set(stopwords.words('english'))

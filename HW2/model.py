@@ -67,5 +67,7 @@ class LSTM(nn.Module):
         out = out[:, -1]
         return out, hidden
 
-    def init_hidden(self):
+    def init_hidden(self, batch=None):
+        if batch:
+            return torch.zeros(1, batch, 32), torch.zeros(1, batch, 32)
         return torch.zeros(1, self.batch_size, 32), torch.zeros(1, self.batch_size, 32)

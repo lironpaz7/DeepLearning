@@ -74,7 +74,7 @@ def train(train_dl, test_dl, model, criterion, optimizer, num_epochs=30):
     y_actual_str = [reverse_label(x) for x in y_actual]
     y_pred_str = [reverse_label(x) for x in y_pred]
     print(confusion_matrix(y_actual_str, y_pred_str, labels=sentiment_class))
-    print(accuracy_score(y_actual, y_pred))
+    print(f'Accuracy: {accuracy_score(y_actual, y_pred)}')
 
     # outputs results for analysis
     pd.DataFrame({

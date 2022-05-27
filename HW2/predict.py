@@ -27,16 +27,15 @@ def eval(dl, model, criterion, train=False):
 
     # predict
     with torch.no_grad():
-        h0, c0 = model.init_hidden()
-        if torch.cuda.is_available():
-            h0 = h0.cuda()
-            c0 = c0.cuda()
-
         for batch_idx, batch in enumerate(dl):
             input, target = batch[0], batch[1]
+            h0, c0 = model.init_hidden(len(input))
             if torch.cuda.is_available():
+                h0 = h0.cuda()
+                c0 = c0.cuda()
                 input = input.cuda()
                 target = target.cuda()
+
             output, hidden = model(input, (h0, c0))
             loss = criterion(output, target)
 
@@ -75,7 +74,7 @@ if __name__ == '__main__':
     print('------------------- Stage 2 completed -------------------')
 
     print('Loading Model...')
-    model_name = 'model_epoch_4.pkl'
+    model_name = 'model_epoch_9.pkl'
     model = torch.load(model_name)  # 4 - 0.5 accuracy
     print('------------------- Stage 3 completed -------------------')
 
