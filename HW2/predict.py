@@ -3,6 +3,7 @@ import time
 
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 from sklearn.metrics import confusion_matrix, accuracy_score
 from torch import nn
 from torch.utils.data import TensorDataset, DataLoader
@@ -27,7 +28,7 @@ def eval(dl, model, criterion, train=False):
 
     # predict
     with torch.no_grad():
-        for batch_idx, batch in enumerate(dl):
+        for batch_idx, batch in tqdm(enumerate(dl), total=len(dl), ascii=False, desc='Predicting...', ncols=100):
             input, target = batch[0], batch[1]
             h0, c0 = model.init_hidden(len(input))
             if torch.cuda.is_available():
