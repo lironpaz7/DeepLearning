@@ -76,7 +76,7 @@ if __name__ == '__main__':
     print('------------------- Stage 2 completed -------------------')
 
     print('Loading Model...')
-    model_name = 'model_epoch_14.pkl'
+    model_name = 'model.pkl'
     model = torch.load(model_name)
     print('------------------- Stage 3 completed -------------------')
 
