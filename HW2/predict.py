@@ -49,14 +49,15 @@ def eval(dl, model, criterion, train=False):
             acc_lst.append(accuracy_score(y_actual, y_pred))
             loss_lst.append(loss.item())
 
+    y_actual_str = [reverse_label(x) for x in y_actual]
+    y_pred_str = [reverse_label(x) for x in y_pred]
+    acc = accuracy_score(y_actual, y_pred)
     if train:
-        return np.mean(acc_lst), np.mean(loss_lst)
+        return acc, np.mean(loss_lst)
     else:
         print(sentiment_class)
-        y_actual_str = [reverse_label(x) for x in y_actual]
-        y_pred_str = [reverse_label(x) for x in y_pred]
         print(confusion_matrix(y_actual_str, y_pred_str, labels=sentiment_class))
-        print(f'Test accuracy: {accuracy_score(y_actual, y_pred)}')
+        print(f'Test accuracy: {acc}')
         return y_actual_str, y_pred_str
 
 
@@ -75,7 +76,7 @@ if __name__ == '__main__':
     print('------------------- Stage 2 completed -------------------')
 
     print('Loading Model...')
-    model_name = 'model_epoch_9.pkl'
+    model_name = 'model_epoch_14.pkl'
     model = torch.load(model_name)
     print('------------------- Stage 3 completed -------------------')
 

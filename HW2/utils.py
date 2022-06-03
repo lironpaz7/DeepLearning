@@ -14,6 +14,7 @@ DROPOUT = 0.1
 NUM_EPOCHS = 30
 BATCH_SIZE = 50
 SEQ_LENGTH = 32
+LEARNING_RATE = 0.001
 
 stop_words = set(stopwords.words('english'))
 label_dict = {'happiness': 2,
@@ -56,9 +57,11 @@ def map_class(sentiment):
 
 def clean_tweets(text):
     link_re_pattern = "https?:\/\/t.co/[\w]+"
+    tags = r'@[^\s]+'
     mention_re_pattern = "@\w+"
     text = re.sub(link_re_pattern, "", text)
     text = re.sub(mention_re_pattern, "", text)
+    text = re.sub(tags, '', text)
     return text.lower()
 
 

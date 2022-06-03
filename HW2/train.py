@@ -1,12 +1,13 @@
 import argparse
 import time
 
+import numpy as np
 import torch.cuda
 from sklearn.metrics import confusion_matrix, accuracy_score
 from torch import nn, optim
 from torch.utils.data import TensorDataset, DataLoader
 from predict import eval
-from model import RNN, LSTM
+from model import LSTM
 from utils import *
 
 
@@ -75,6 +76,9 @@ def train(train_dl, test_dl, model, criterion, optimizer, num_epochs=30):
     y_pred_str = [reverse_label(x) for x in y_pred]
     print(confusion_matrix(y_actual_str, y_pred_str, labels=sentiment_class))
     print(f'Accuracy: {accuracy_score(y_actual, y_pred)}')
+    print()
+    print(f'Test best accuracy on test was: {np.max(acc_lst_tst)}, achieved on epoch: {np.argmax(acc_lst_tst)}')
+    print()
 
     # outputs results for analysis
     pd.DataFrame({
@@ -136,18 +140,18 @@ if __name__ == '__main__':
     test_y = np.array([label for tweet, label in test_data])
 
     test_ds = TensorDataset(torch.from_numpy(test_x), torch.from_numpy(test_y))
-    test_dl = DataLoader(test_ds, shuffle=False, batch_size=BATCH_SIZE, drop_last=True)
+    test_dl = DataLoader(test_ds, shuffle=False, batch_size=BATCH_SIZE, drop_last=False)
 
     print('------------------- Stage 5 completed -------------------')
 
     print('Building LSTM model and setting Adam optimizer...')
     # creating an instance of RNN
     # model = RNN(EMBEDDING_DIM, HIDDEN_DIM, len(vocab), len(label_dict), vocab)
-    model = LSTM(len(vocab), EMBEDDING_DIM, HIDDEN_DIM, DROPOUT, BATCH_SIZE, vocab)
+    model = LSTM(len(vocab), EMBEDDING_DIM, HIDDEN_DIM, DROPOUT, vocab)
 
     # Setting the loss function and optimizer
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
     print('Number Of Parameters: ', sum(param.numel() for param in model.parameters()))
     print('------------------- Stage 6 completed -------------------')
 

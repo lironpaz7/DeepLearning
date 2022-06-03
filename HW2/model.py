@@ -1,36 +1,36 @@
 import torch
 from torch import nn
 
-
-class RNN(nn.Module):
-    def __init__(self, input_size, hidden_size, vocab_size, output_size, vocab):
-        super(RNN, self).__init__()
-        self.vocab = vocab
-        self.hidden_size = hidden_size
-        self.word_embeddings = nn.Embedding(vocab_size, input_size)
-        self.i2h = nn.Linear(input_size + hidden_size, hidden_size)
-        self.i2o = nn.Linear(input_size + hidden_size, output_size)
-        self.softmax = nn.LogSoftmax(dim=1)
-
-    def forward(self, word, hidden):
-        embeds = self.word_embeddings(word)
-        combined = torch.cat((embeds.view(1, -1), hidden), 1)
-        hidden = self.i2h(combined)
-        output = self.i2o(combined)
-        output = self.softmax(output)
-        return output, hidden
-
-    def init_hidden(self):
-        return torch.zeros(1, self.hidden_size)
-
-    def get_vocab(self):
-        return self.vocab
+# class RNN(nn.Module):
+#     def __init__(self, input_size, hidden_size, vocab_size, output_size, vocab):
+#         super(RNN, self).__init__()
+#         self.vocab = vocab
+#         self.hidden_size = hidden_size
+#         self.word_embeddings = nn.Embedding(vocab_size, input_size)
+#         self.i2h = nn.Linear(input_size + hidden_size, hidden_size)
+#         self.i2o = nn.Linear(input_size + hidden_size, output_size)
+#         self.softmax = nn.LogSoftmax(dim=1)
+#
+#     def forward(self, word, hidden):
+#         embeds = self.word_embeddings(word)
+#         combined = torch.cat((embeds.view(1, -1), hidden), 1)
+#         hidden = self.i2h(combined)
+#         output = self.i2o(combined)
+#         output = self.softmax(output)
+#         return output, hidden
+#
+#     def init_hidden(self):
+#         return torch.zeros(1, self.hidden_size)
+#
+#     def get_vocab(self):
+#         return self.vocab
+from utils import *
 
 
 class LSTM(nn.Module):
-    def __init__(self, vocab_size, embedding_dim, hidden_dim, dropout, batch_size, vocab):
+    def __init__(self, vocab_size, embedding_dim, hidden_dim, dropout, vocab):
         super().__init__()
-        self.batch_size = batch_size
+        self.batch_size = BATCH_SIZE
         self.vocab = vocab  # save the vocabulary from the train so we can use it on test
 
         # The embedding layer takes the vocab size and the embeddings size as input
@@ -45,7 +45,7 @@ class LSTM(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
         # The fully-connected layer takes in the hidden dim of the LSTM and
-        #  outputs a a 3x1 vector of the class scores.
+        #  outputs a 3x1 vector of the class scores.
         self.fc = nn.Linear(hidden_dim, 3)
 
     def forward(self, x, hidden):
@@ -69,5 +69,5 @@ class LSTM(nn.Module):
 
     def init_hidden(self, batch=None):
         if batch:
-            return torch.zeros(1, batch, 32), torch.zeros(1, batch, 32)
-        return torch.zeros(1, self.batch_size, 32), torch.zeros(1, self.batch_size, 32)
+            return torch.zeros(1, batch, HIDDEN_DIM), torch.zeros(1, batch, HIDDEN_DIM)
+        return torch.zeros(1, self.batch_size, HIDDEN_DIM), torch.zeros(1, self.batch_size, HIDDEN_DIM)
