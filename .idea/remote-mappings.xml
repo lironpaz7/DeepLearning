@@ -8,6 +8,7 @@
             <list>
               <mapping local-root="$PROJECT_DIR$/HW1" remote-root="/home/student/HW1" />
               <mapping local-root="$PROJECT_DIR$/HW2" remote-root="/home/student/HW2" />
+              <mapping local-root="$PROJECT_DIR$/HW3" remote-root="/home/student/HW3" />
             </list>
           </settings>
         </remote-mappings>
